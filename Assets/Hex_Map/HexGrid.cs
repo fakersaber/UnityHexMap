@@ -33,15 +33,18 @@ public class HexGrid : MonoBehaviour
                 cells[index] = Instantiate<HexCell>(cellPrefab);
                 position.x = x * 10f;
                 position.z = z * 10f;
-                //设置父系坐标，可以不关心在world space下的位置
-                cells[index].transform.SetParent(this.transform);
+                //如果原本的transform有父类transform，那么第二个param为ture时会保证更换父类后原物体的position在world space下保持不变
+                //在此处两个地方都是需要跟随父系一起变换，所以直接设置为false
+                cells[index].transform.SetParent(this.transform,false);
                 cells[index].transform.localPosition = position;
 
                 Text label = Instantiate<Text>(cellLabelPrefab);
                 anchoredPos.x = x * 10f;
                 anchoredPos.y = z * 10f;
-                label.rectTransform.SetParent(gridCanvas.transform, false);
+                //不要又变回原位置，跟随父级一起变
+                label.rectTransform.SetParent(gridCanvas.transform,false);
                 label.rectTransform.anchoredPosition = anchoredPos;
+                
                 label.text = x.ToString() + "\n" + z.ToString();
             }
         }
