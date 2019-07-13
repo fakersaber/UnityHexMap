@@ -4,11 +4,6 @@ using UnityEngine;
 
 public class HexCell : MonoBehaviour
 {
-
-
-
-
-
     // Start is called before the first frame update
     void Start()
     {
