@@ -6,6 +6,8 @@ public static class HexMetrics
 {
     public const float outerRadius = 10f;
     public const float innerRadius = outerRadius * 0.8660254f;
+    
+
 
     //pointy side up of orientate a hexagon
     public static Vector3[] Edges =

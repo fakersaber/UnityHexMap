@@ -6,19 +6,22 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class HexMesh : MonoBehaviour
 {
-    Mesh hexMesh;
-    List<Vector3> vertices;
-    List<int> triangles;
-
-
+    private Mesh hexMesh;
+    private List<Vector3> vertices;
+    private List<int> triangles;
+    private MeshCollider meshCollider;
+    List<Color> colors;
 
     private void Awake()
     {
         //手动创建mesh
         GetComponent<MeshFilter>().mesh = hexMesh = new Mesh();
+        //添加碰撞盒组件
+        meshCollider = gameObject.AddComponent<MeshCollider>();
         hexMesh.name = "Hex Mesh";
         vertices = new List<Vector3>();
         triangles = new List<int>();
+        colors = new List<Color>();
     }
 
 
@@ -27,13 +30,17 @@ public class HexMesh : MonoBehaviour
         hexMesh.Clear();
         vertices.Clear();
         triangles.Clear();
+        colors.Clear();
         for(int i = 0; i < cells.Length; ++i)
         {
             Triangulate(cells[i]);
         }
         hexMesh.vertices = this.vertices.ToArray();
         hexMesh.triangles = this.triangles.ToArray();
+        //顶点颜色他lei了？
+        hexMesh.colors = colors.ToArray();
         hexMesh.RecalculateNormals();
+        meshCollider.sharedMesh = hexMesh;
     }
 
     private void Triangulate(HexCell cell)
@@ -52,6 +59,10 @@ public class HexMesh : MonoBehaviour
             triangles.Add(vertexIndex);
             triangles.Add(vertexIndex + 1);
             triangles.Add(vertexIndex + 2);
+
+            colors.Add(cell.color);
+            colors.Add(cell.color);
+            colors.Add(cell.color);
         }
 
     }
