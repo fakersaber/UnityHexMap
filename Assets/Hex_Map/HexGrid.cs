@@ -15,7 +15,11 @@ public class HexGrid : MonoBehaviour
     private HexMesh hexMesh;
     private HexCell[] cells;
     private Canvas gridCanvas;
-    
+
+    private float ColorChangeSpeed = 0.5f;
+    private const int ScanCellNum = 2;
+    private int startColorCell = 0;
+
 
     //减少栈GC，描述Cell and lable position
     private Vector3 position;
@@ -64,9 +68,6 @@ public class HexGrid : MonoBehaviour
         }
     }
 
-    //enum Mouse_Button {
-        
-    //}
 
     // Start is called before the first frame update
     private void Start()
@@ -74,9 +75,10 @@ public class HexGrid : MonoBehaviour
         hexMesh.Triangulate(cells);
     }
 
-    // Update is called once per frame
+
     void Update()
     {
+
         if (Input.GetMouseButtonDown(0))
         {
             HandleInput();
@@ -85,19 +87,6 @@ public class HexGrid : MonoBehaviour
 
     void HandleInput()
     {
-        //射线的原点是在近裁剪面上
-        //具体算法即在ndc下取z = -1，直接与对应逆矩阵进行运算（PS：UNITY的CAMERA下的PROJECTMATRIX是做了透视除法的。。）
-        //代码如下~
-        //float NdcX = (2f * Input.mousePosition.x - Camera.main.pixelWidth) / Camera.main.pixelWidth;
-        //float NdcY = (2f * Input.mousePosition.y - Camera.main.pixelHeight) / Camera.main.pixelHeight;
-        //float NdcZ = -1f;
-        //Vector3 ndc_position = new Vector3(NdcX, NdcY, NdcZ);
-        //Vector3 world_position = Camera.main.cameraToWorldMatrix.MultiplyPoint(Camera.main.projectionMatrix.inverse.MultiplyPoint(ndc_position));
-        //Vector3 world_point = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.nearClipPlane));
-        ////结果相同
-        //Debug.Log(world_position.ToString("F4"));
-        //Debug.Log(world_point.ToString("F4"));
-
         Ray inputRay = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
         //射线与物体相交
@@ -114,11 +103,70 @@ public class HexGrid : MonoBehaviour
         HexCoordinates coordinates = HexCoordinates.FromPosition(position);
         //X可能是负数,因为做了坐标变换，需要加上coordinates.Z / 2
         int index = coordinates.X + coordinates.Z * width + coordinates.Z / 2;
+
         cells[index].color = touchedColor;
         //重绘整个mesh
         hexMesh.Triangulate(cells);
     }
+
+    //当前仅支持偶数格，以一个cell为变换单位
+    private void ChangeCellColor()
+    {
+        if (ColorChangeSpeed < 0.5f)
+        {
+            ColorChangeSpeed += Time.deltaTime;
+        }
+        else
+        {
+            ColorChangeSpeed = 0f;
+            int CurCellIndex = 0;
+
+            for (int z = 0; z < height; ++z)
+            {
+                for (int i = 0; i < width; ++i)
+                {
+                    CurCellIndex = i + z * width;
+                    if (i >= startColorCell && i < startColorCell + HexGrid.ScanCellNum)
+                    {
+                        cells[CurCellIndex].color = Color.black;
+                    }
+                    else
+                    {
+                        cells[CurCellIndex].color = defaultColor;
+                    }
+
+                }
+            }
+            //其他顶点需要保持原色
+            hexMesh.Triangulate(cells);
+
+            startColorCell += HexGrid.ScanCellNum;
+            if (startColorCell == width)
+            {
+                startColorCell = 0;
+            }
+        }
+    } 
+
+    //转换到相机近平面上（透视投影）
+    private void ScreenToNearWorld()
+    {
+        //射线的原点是在近裁剪面上
+        //具体算法即在ndc下取z = -1，直接与对应逆矩阵进行运算（PS：UNITY的CAMERA下的PROJECTMATRIX是做了透视除法的。。）
+        //代码如下~
+        float NdcX = (2f * Input.mousePosition.x - Camera.main.pixelWidth) / Camera.main.pixelWidth;
+        float NdcY = (2f * Input.mousePosition.y - Camera.main.pixelHeight) / Camera.main.pixelHeight;
+        float NdcZ = -1f;
+        Vector3 ndc_position = new Vector3(NdcX, NdcY, NdcZ);
+        Vector3 world_position = Camera.main.cameraToWorldMatrix.MultiplyPoint(Camera.main.projectionMatrix.inverse.MultiplyPoint(ndc_position));
+        Vector3 world_point = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.nearClipPlane));
+        //结果相同
+        Debug.Log(world_position.ToString("F4"));
+        Debug.Log(world_point.ToString("F4"));
+    }
 }
+
+
 
 
 ////这个方案要分别从六个方向来修正误差，而且轴线无法计算。。
