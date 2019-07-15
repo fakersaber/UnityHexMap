@@ -11,9 +11,6 @@ Shader "Unlit/NewUnlitShader"
     {
         Tags { "RenderType"="Opaque" }
         LOD 100
-
-		
-
         Pass
         {
             CGPROGRAM
@@ -22,7 +19,9 @@ Shader "Unlit/NewUnlitShader"
             // make fog work
 
 			sampler2D _GridTex;
-			float4 _GridTex_ST;
+			//float4 _GridTex_ST;
+			uniform float _LinePos;
+
             #include "UnityCG.cginc"
 
             struct appdata
@@ -60,9 +59,28 @@ Shader "Unlit/NewUnlitShader"
 				gridUV.x *= 1 / (4 * 8.66025404);
 				gridUV.y *= 1 / (3 * 10.0);
 				//这里由于距离太远造成纹理放大缩小时表现不同，采用多级渐进纹理解决
-				fixed3 final_color = tex2D(_GridTex, gridUV).rgb * i.color.rgb;// * i.color.rgb;
+
+				float distoLine = abs(i.worldPos.x - _LinePos) - 8.66025404;
+
+				//如果改成在线左右显示贴图然后渐变(r-1)个内圆，其他都是黑色
+				if (distoLine <= 0) {
+					return fixed4(tex2D(_GridTex, gridUV).rgb,1.0);
+				}
+				//外部渐变，距离越远ratio越小
+				float ratio = 1.0 - saturate(distoLine / (8.66025404 * 3));
+				//step(a, x) 如果a<x  return 1
+				fixed3 final_color = ratio * tex2D(_GridTex, gridUV).rgb;
 
 				return fixed4(final_color,1.0);
+
+
+				//线周围显示黑色
+				/***************************************************************************************
+				//从轴线中间到左右两边一个内圆值都为0,超出为实际距离，然后除(r-1)个渐变内圆（因为值为0的距离为一个内圆长）表示在左右(r-1)个内圆渐变颜色，再截取到0到1
+				//float ratio = saturate(max(0, abs(i.worldPos.x - _LinePos) - 8.66025404) / (8.66025404 * 3));	
+				//fixed3 final_color = tex2D(_GridTex, gridUV).rgb  * ratio;// * i.color.rgb;
+				//return fixed4(final_color,1.0);
+				****************************************************************************************/
             }
             ENDCG
         }
