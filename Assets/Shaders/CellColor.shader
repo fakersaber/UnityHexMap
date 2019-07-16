@@ -16,7 +16,6 @@ Shader "Unlit/NewUnlitShader"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            // make fog work
 
 			sampler2D _GridTex;
 			//float4 _GridTex_ST;
@@ -44,7 +43,6 @@ Shader "Unlit/NewUnlitShader"
             v2f vert (appdata v)
             {
                 v2f o;
-				
 				//o.uv = TRANSFORM_TEX(v.uv, _GridTex);
                 o.vertex = UnityObjectToClipPos(v.vertex);
 				o.color = v.color;
@@ -59,10 +57,8 @@ Shader "Unlit/NewUnlitShader"
 				gridUV.x *= 1 / (4 * 8.66025404);
 				gridUV.y *= 1 / (3 * 10.0);
 				//这里由于距离太远造成纹理放大缩小时表现不同，采用多级渐进纹理解决
-
 				float distoLine = abs(i.worldPos.x - _LinePos) - 8.66025404;
-
-				//如果改成在线左右显示贴图然后渐变(r-1)个内圆，其他都是黑色
+				//在线左右显示贴图然后渐变(r-1)个内圆，其他都是黑色
 				if (distoLine <= 0) {
 					return fixed4(tex2D(_GridTex, gridUV).rgb,1.0);
 				}
@@ -72,7 +68,7 @@ Shader "Unlit/NewUnlitShader"
 				fixed3 final_color = ratio * tex2D(_GridTex, gridUV).rgb;
 
 				return fixed4(final_color,1.0);
-
+				
 
 				//线周围显示黑色
 				/***************************************************************************************
